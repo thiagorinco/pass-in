@@ -3,33 +3,101 @@ import { Table } from './table/table'
 import { IconButton } from './icon-button'
 import { TableHeader } from './table/table-header'
 import { TableLine } from './table/table-line'
-import { ChangeEvent, useState } from 'react'
-import { attendees } from '../data/attendees'
+import { ChangeEvent, useEffect, useState } from 'react'
+
+interface Attendees {
+    id: string;
+    name: string;
+    email: string;
+    createdAt: string;
+    checkedInAt: string | null;
+}
+
+interface AttendeesList {
+    attendees: Attendees[],
+    total: number
+}
 
 export function AttendeeList() {
-    const [searchText, setSearchText] = useState<string>('')
-    const [page, setPage] = useState(1)
+    const [searchText, setSearchText] = useState<string>(() => {
+        const url = new URL(window.location.toString())
 
-    let pageNumbers = Math.ceil(attendees.length / 10);
+        if (url.searchParams.has('searchText')) {
+            return url.searchParams.get('searchText') ?? ''
+        }
+
+        return '';
+    })
+    const [page, setPage] = useState(() => {
+        const url = new URL(window.location.toString())
+
+        if (url.searchParams.has('page')) {
+            return Number(url.searchParams.get('page'))
+        }
+
+        return 1;
+    })
+
+    const [totalAttendees, setTotalAttendees] = useState(0)
+    const [attendees, setAttendees] = useState<Attendees[]>([])
+
+    useEffect(() => {
+        const url = new URL('http://localhost:3333/events/9e9bd979-9d10-4915-b339-3786b1634f33/attendees')
+
+        url.searchParams.set('pageIndex', String(page - 1))
+
+        if (searchText.length > 0) {
+            url.searchParams.set('query', searchText)
+        }
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                setAttendees(data.attendees)
+                setTotalAttendees(data.total)
+            })
+    }, [page, searchText])
+
+    let pageNumbers = Math.ceil(totalAttendees / 10);
+
+    function setCurrentSeachText(search: string) {
+        const url = new URL(window.location.toString())
+
+        url.searchParams.set('searchText', search.toString())
+
+        window.history.pushState({}, '', url)
+        setSearchText(search)
+    }
+
+    function setCurrentPage(page: number) {
+        const url = new URL(window.location.toString())
+
+        url.searchParams.set('page', page.toString())
+
+        window.history.pushState({}, '', url)
+        setPage(page)
+    }
 
     function onSearchInputChange(event: ChangeEvent<HTMLInputElement>) {
-        setSearchText(event.target.value)
+        setCurrentSeachText(event.target.value)
+        setCurrentPage(1)
     }
 
     function goToNextPage() {
-        setPage(page + 1)
+        setCurrentPage(page + 1)
     }
 
     function goToPreviousPage() {
-        setPage(page - 1)
+        setCurrentPage(page - 1)
     }
 
     function goToFirstpage() {
-        setPage(1)
+        setCurrentPage(1)
     }
 
     function goToLastpage() {
-        setPage(pageNumbers)
+        setCurrentPage(pageNumbers)
     }
 
     return (
@@ -38,7 +106,13 @@ export function AttendeeList() {
                 <h1 className="text-2xl font-bold ">Participantes</h1>
                 <div className="px-3 w-72 py-1.5 border border-white/10 bg-transparent rounded-lg text-sm flex items-center gap-3">
                     <Search size={16} className='text-emerald-300' />
-                    <input onChange={onSearchInputChange} className="bg-transparent flex-1 outline-none h-auto border-0 text-sm p-0" placeholder="Buscar participante..."></input>
+                    <input
+                        onChange={onSearchInputChange}
+                        value={searchText}
+                        className="bg-transparent flex-1 outline-none h-auto border-0 text-sm p-0 focus:ring-0"
+                        placeholder="Buscar participante...">
+
+                    </input>
                 </div>
             </div>
 
@@ -57,16 +131,16 @@ export function AttendeeList() {
 
                 </thead>
                 <tbody>
-                    {attendees.slice((page - 1) * 10, page * 10).map((attendees) => {
+                    {attendees.map((attendees) => {
                         return (
-                            <TableLine key={attendees.code} code={attendees.code} name={attendees.name} email={attendees.email} createdAt={attendees.createdAt} checkedAt={attendees.checkedAt} />
+                            <TableLine key={attendees.id} code={attendees.id} name={attendees.name} email={attendees.email} createdAt={attendees.createdAt} checkedAt={attendees.checkedInAt} />
                         )
                     })}
 
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td className='py-3 px-3 text-sm  text-left' colSpan={3}> Mostrando 10 de {attendees.length} </td>
+                        <td className='py-3 px-3 text-sm  text-left' colSpan={3}> Mostrando {attendees.length} de {totalAttendees} </td>
                         <td className='py-3 px-3 text-sm  text-right' colSpan={3}>
                             <div className='inline-flex itens-center gap-8'>
                                 <span>Mostrando {page} de {pageNumbers}</span>
