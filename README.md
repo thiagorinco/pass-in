@@ -15,7 +15,7 @@ Essa aplicação foi desenvolvida durante o evento NLW Unity, realizado pela Roc
 4. Acessar [http://localhost:5173/](http://localhost:5173/) no navegador
 5. Para funcionamento ideal da aplicação, é necessário também clonar e executar o backend presente no link [https://github.com/rocketseat-education/nlw-unite-nodejs]
 6. Após clonar o back end, criar na raiz da aplicação o arquivo .env e preenche-lo com 'DATABASE_URL="file:./dev.db"'
-7. Executar o comando `npx prisma seed` para popular o banco de dados e por fim, `npm run dev` para executar o servidor backend
+7. Executar o comando `npx prisma db seed` para popular o banco de dados e por fim, `npm run dev` para executar o servidor backend
 
 ### Qual o objetivo da aplicação:
 
